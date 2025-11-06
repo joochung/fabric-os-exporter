@@ -121,13 +121,20 @@ func (c *FabricOSCollector) collectForHost(host connector.Targets, ch chan<- pro
 	if err != nil {
 		log.Errorf("Executing fabricshow command failed: %s", err)
 	}
-	// 	Switch ID   Worldwide Name          Enet IP Addr    FC IP Addr      Name
-	// -------------------------------------------------------------------------
-	//   1: fffc01 10:00:88:94:71:61:5d:73 172.16.64.17    0.0.0.0        >"SAN1"
-	log.Debugln("Response of fabricshow cmd: ", fabricResp)
-	re := regexp.MustCompile(`>"(.*?)"`)
-	hostname = re.FindString(fabricResp)
-	hostname = hostname[2 : len(hostname)-1]
+
+	// get switch name from switch show
+    // switchName:     SWF-IBM-55
+    // switchType:     109.1
+    // switchState:    Online
+    // switchMode:     Native
+    // switchRole:     Subordinate
+
+    // switchResp := "blahblahblah: lalalalala\nfoofoofoo:   barbarbar\nswitchName:    FOOBAR\nblahblahblah"
+    switchResp, err := conn.RunCommand("switchshow")
+    re := regexp.MustCompile(`switchName:\s*(\S+)`)
+    match := re.FindStringSubmatch(switchResp)
+    hostname = match[1]
+
 	log.Debugln("hostname: ", hostname)
 	if hostname != "" {
 		for name, col := range c.Collectors {
